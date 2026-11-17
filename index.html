@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>دليلك الطبي</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Tahoma, Arial, sans-serif; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #f4f7f9; }
+
+        /* 0. شاشة الترحيب الافتتاحية (Splash Screen) بصورة الأيقونة */
+        #splashScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #0D47A1, #1976D2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.6s ease-out, visibility 0.6s ease-out;
+        }
+        #splashScreen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .splash-logo {
+            width: 220px;
+            height: 220px;
+            border-radius: 35px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            object-fit: cover;
+            animation: pulseLogo 1.5s infinite ease-in-out;
+        }
+        .splash-loader {
+            margin-top: 25px;
+            color: white;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+        @keyframes pulseLogo {
+            0% { transform: scale(0.96); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(0.96); }
+        }
+
+        /* الشريط العلوي للبلد والمسافة */
+        .top-bar {
+            position: fixed; top: 0; left: 0; width: 100%; height: 48px;
+            background: #1565C0; color: white; padding: 0 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 13px; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .distance-badge {
+            background: rgba(255,255,255,0.25); padding: 5px 12px;
+            border-radius: 15px; font-weight: bold; cursor: pointer;
+        }
+
+        /* حاوية الشاشات */
+        .screen {
+            display: none; position: absolute; top: 48px; bottom: 65px;
+            left: 0; width: 100%; overflow-y: auto;
+        }
+        .screen.active { display: block; }
+
+        /* 1. شاشة الرئيسية بصورتك */
+        #homeScreen {
+            background-image: url('bg.png.jpg');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            overflow: hidden;
+        }
+        .search-trigger {
+            position: absolute; top: 2%; left: 5%; width: 90%; height: 8%; cursor: pointer;
+        }
+        .home-grid {
+            position: absolute; top: 13%; left: 4%; width: 92%; height: 82%;
+            display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; gap: 10px;
+        }
+        .grid-btn { width: 100%; height: 100%; border-radius: 20px; cursor: pointer; }
+        .grid-btn:active { background: rgba(21, 101, 192, 0.15); }
+
+        /* 2. شاشة البحث الحي عبر الإنترنت */
+        .page-content { padding: 15px; }
+        .search-container { display: flex; gap: 8px; margin-bottom: 15px; }
+        .search-box {
+            flex: 1; padding: 12px 15px; border: 2px solid #1565C0;
+            border-radius: 25px; font-size: 14px; outline: none; background: white;
+        }
+        .btn-search-exec {
+            background: #1565C0; color: white; border: none; border-radius: 25px;
+            padding: 0 20px; font-weight: bold; cursor: pointer;
+        }
+
+        /* بطاقة نتائج الطبيب أو العيادة */
+        .doctor-card {
+            background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08); border-right: 5px solid #2E7D32;
+        }
+        .doc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .doc-name { font-size: 16px; font-weight: bold; color: #1565C0; }
+        .doc-dist { background: #E8F5E9; color: #2E7D32; padding: 3px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; }
+        .doc-info { font-size: 13px; color: #444; margin-bottom: 5px; line-height: 1.6; }
+        .card-actions { display: flex; gap: 8px; margin-top: 12px; }
+        .btn-action {
+            flex: 1; padding: 9px; border: none; border-radius: 8px;
+            color: white; font-size: 12px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none;
+        }
+        .btn-call { background: #2E7D32; }
+        .btn-map { background: #1565C0; }
+        .btn-book { background: #EF6C00; }
+
+        /* 3. شاشة الحجوزات */
+        .booking-card {
+            background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px;
+            border-right: 4px solid #EF6C00; box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+
+        /* 4. شاشة الإعدادات */
+        .setting-item {
+            background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        /* القائمة السفلية */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 65px;
+            background: white; display: flex; border-top: 1px solid #ddd; z-index: 100;
+        }
+        .nav-item {
+            flex: 1; display: flex; flex-direction: column; justify-content: center;
+            align-items: center; font-size: 12px; color: #666; cursor: pointer;
+        }
+        .nav-item.active { color: #1565C0; font-weight: bold; background: #f0f6ff; }
+        .nav-icon { font-size: 20px; margin-bottom: 3px; }
+        .loader { text-align: center; color: #1565C0; font-weight: bold; padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <!-- شاشة الفتح الترحيبية بصورة أيقونة البرنامج -->
+    <div id="splashScreen">
+        <img src="app_icon.png.jpg" alt="دليلك الطبي" class="splash-logo">
+        <div class="splash-loader">جاري تحميل دليلك الطبي وتحديد موقعك...</div>
+    </div>
+
+    <!-- الشريط العلوي للبلد والمسافة -->
+    <div class="top-bar">
+        <span id="countryText">📍 جاري تحديد البلد والموقع...</span>
+        <span class="distance-badge" id="distanceBtn" onclick="cycleDistance()">النطاق: 5 كم</span>
+    </div>
+
+    <!-- الشاشة 1: الرئيسية بصورتك -->
+    <div id="homeScreen" class="screen active">
+        <div class="search-trigger" onclick="openSearchWithQuery('')"></div>
+        <div class="home-grid">
+            <!-- عيادات ومستشفيات -->
+            <div class="grid-btn" onclick="openSearchWithQuery('مستشفى')"></div>
+            <!-- ابحث عن طبيب -->
+            <div class="grid-btn" onclick="openSearchWithQuery('طبيب')"></div>
+            <!-- صيدليات -->
+            <div class="grid-btn" onclick="openSearchWithQuery('صيدلية')"></div>
+            <!-- الطوارئ -->
+            <div class="grid-btn" onclick="openSearchWithQuery('طوارئ')"></div>
+            <!-- إشعارات -->
+            <div class="grid-btn" onclick="alert('لا توجد إشعارات طبية جديدة حالياً')"></div>
+            <!-- تاريخي الطبي / حجوزاتي -->
+            <div class="grid-btn" onclick="switchTab('bookingsScreen')"></div>
+        </div>
+    </div>
+
+    <!-- الشاشة 2: البحث الحي بالموقع الجغرافي -->
+    <div id="searchScreen" class="screen">
+        <div class="page-content">
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-box" placeholder="اكتب اسم الدكتور، العيادة، أو التخصص...">
+                <button class="btn-search-exec" onclick="searchLiveLocations()">بحث</button>
+            </div>
+            <div id="doctorsList">
+                <p style="text-align:center; color:#666; margin-top:30px;">اكتب اسم الطبيب أو العيادة واضغط "بحث" لجلب البيانات الحية من محيطك الجغرافي.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- الشاشة 3: الحجوزات -->
+    <div id="bookingsScreen" class="screen">
+        <div class="page-content">
+            <h3 style="margin-bottom: 15px; color: #1565C0;">📅 حجوزاتي الطبية المسجلة</h3>
+            <div id="bookingsList"></div>
+        </div>
+    </div>
+
+    <!-- الشاشة 4: الإعدادات -->
+    <div id="settingsScreen" class="screen">
+        <div class="page-content">
+            <h3 style="margin-bottom: 15px; color: #1565C0;">⚙️ إعدادات التطبيق</h3>
+            <div class="setting-item">
+                <span>تحديث الموقع الجغرافي (GPS)</span>
+                <button onclick="detectLocation()" style="padding:7px 14px; background:#1565C0; color:white; border:none; border-radius:6px;">تحديث الآن</button>
+            </div>
+            <div class="setting-item">
+                <span>نطاق مسافة البحث</span>
+                <button onclick="cycleDistance()" id="settingDistBtn" style="padding:7px 14px; background:#2E7D32; color:white; border:none; border-radius:6px;">5 كم</button>
+            </div>
+            <div class="setting-item">
+                <span>مسح سجل الحجوزات</span>
+                <button onclick="clearBookings()" style="padding:7px 14px; background:#D32F2F; color:white; border:none; border-radius:6px;">مسح السجل</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- القائمة السفلية -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('homeScreen', this)">
+            <span class="nav-icon">🏠</span>
+            <span>الرئيسية</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('searchScreen', this)">
+            <span class="nav-icon">🔍</span>
+            <span>البحث</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('bookingsScreen', this)">
+            <span class="nav-icon">📅</span>
+            <span>الحجوزات</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('settingsScreen', this)">
